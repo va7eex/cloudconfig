@@ -112,7 +112,7 @@ class Server(BaseModel):
     datasource: Vultr | DigitalOcean
 
     apt: Apt | None = None
-    runcmd: list[list[str]] | None = None
+    runcmd: list[list[str] | str] | None = None
     timezone: str = "America/Vancouver"
     package_update: bool = True
     package_upgrade: bool = True
@@ -179,6 +179,7 @@ server = Server(
         "fail2ban",
         "neofetch",
         "zsh",
+        "git",
         "wireguard",
         "python3",
         "python3-pip",
