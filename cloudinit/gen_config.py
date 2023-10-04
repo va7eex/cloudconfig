@@ -11,7 +11,7 @@ class DataSource(BaseModel):
     https://cloudinit.readthedocs.io/en/latest/reference/datasources.html
     """
 
-    url: str = "http://169.254.169.254"
+    url: str = "http://169.254.169.254"  # this is an IPv4 link-local address
     retries: int = 3
     timeout: int = 2
     wait: int = 2
@@ -102,6 +102,48 @@ class FileObj(BaseModel):
         return str(oct(os.stat(path).st_mode))[-4:]
 
 
+class PhoneHome(BaseModel):
+    """
+    https://cloudinit.readthedocs.io/en/latest/reference/modules.html#phone-home
+    """
+
+    url: str  # = http://example.com/$INSTANCE_ID/
+    post: list[str] | Literal["all"] = "all"
+    # These are all the available options
+    # [
+    #     "pub_key_dsa",
+    #     "pub_key_rsa",
+    #     "pub_key_ecdsa",
+    #     "pub_key_ed25519",
+    #     "instance_id",
+    #     "hostname",
+    #     "fdqn",
+    # ]
+    tries: int | None = None
+
+
+class ChPasswd(BaseModel):
+    """
+    https://cloudinit.readthedocs.io/en/latest/reference/modules.html#set-passwords
+    """
+
+    expire: bool = True
+
+
+class RSyslog(BaseModel):
+    """
+    https://cloudinit.readthedocs.io/en/latest/reference/modules.html#rsyslog
+    """
+
+    config_dir: str | None = None
+    config_filename: str | None = None
+    configs: list[dict[str, str]] | None = None
+    remotes: list[dict[str, str]] | None = None
+    service_reload_command: list[str] | Literal["auto"] = "auto"
+    install_rsyslog: bool | None = None
+    packages: list[str] | None = None
+
+
 class Server(BaseModel):
     """
     Root model that we convert to yaml
@@ -109,8 +151,10 @@ class Server(BaseModel):
 
     users: list[User]
     write_files: list[FileObj]
-    datasource: Vultr | DigitalOcean
+    ssh_pwauth: bool = False
+    chpasswd: ChPasswd = ChPasswd()
 
+    datasource: Vultr | DigitalOcean | None = None
     apt: Apt | None = None
     runcmd: list[list[str] | str] | None = None
     timezone: str = "America/Vancouver"
@@ -119,6 +163,7 @@ class Server(BaseModel):
     packages: list[str] | None = None
     ntp: NTP = NTP()
     resize_rootfs: bool = True
+    phone_home: PhoneHome | None = None
     power_state: PowerState = PowerState()
     final_message: str | None = "cloud-init has finished\nversion: $version\ntimestamp: $timestamp\ndatasource: $datasource\nuptime: $uptime"
 
@@ -192,6 +237,8 @@ server = Server(
         "containerd.io",
         "docker-buildx-plugin",
         "docker-compose-plugin",
+        "logrotate",
+        # "pmount",  # Not necessary for servers, but handy to know about
     ],
     apt=Apt(
         sources={
