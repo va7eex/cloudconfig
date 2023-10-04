@@ -1,0 +1,32 @@
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  web-secure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+        options: strictSNI
+
+providers:
+  providersThrottleDuration: 10s
+  docker:
+    watch: true
+    exposedByDefault: false
+    network: traefik_net
+    allowEmptyServices: false
+  file:
+    watch: true
+    directory: /etc/traefik/dynamic
+
+accessLog:
+  filePath: /opt/traefik/logs/access.log
+  filters:
+    retryAttempts: true
+    minDuration: "10ms"

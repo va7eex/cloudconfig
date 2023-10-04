@@ -1,0 +1,18 @@
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: '{{ env "ACME_EMAIL" }}'
+      storage: /srv/acme/acme.json
+      dnsChallenge:
+        # Be sure to set the following ENV variables:
+        # CLOUDFLARE_EMAIL
+        # CLOUDFLARE_DNS_API_TOKEN
+        # CLOUDFLARE_ZONE_API_TOKEN
+        # If using DOCKER SECRETS append '_FILE' to all ENVs
+        provider: cloudflare
+        delayBeforeCheck: 10s
+
+tls:
+  options:
+    strictSNI:
+      sniStrict: true
