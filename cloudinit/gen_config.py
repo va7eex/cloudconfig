@@ -187,12 +187,12 @@ def walk_dir(rootdir: str) -> list[str]:
     return _files
 
 
-rootdir = os.path.join(os.path.dirname(__file__), "rootdir")
+_rootdir = os.path.join(os.path.dirname(__file__), "rootdir")
 fileObjs = []
-for f in walk_dir(rootdir):
+for f in walk_dir(_rootdir):
     fileObjs.append(
         FileObj(
-            path=f.replace(rootdir, ""),
+            path=f.replace(_rootdir, ""),
             content=FileObj.get_encoded_text(f),
             permissions=FileObj.get_permissions(f),
         )
@@ -211,12 +211,18 @@ server = Server(
     ],
     write_files=fileObjs,
     runcmd=[
-        ["sudo", "rm", "/etc/ssh/sshd/50-cloud-init.conf"],
-        ["sudo", "systemctl", "enable", "fail2ban.service"],
-        ["sudo", "systemctl", "start", "fail2ban.service"],
-        ["mkdir", "--mode=700", "~/.wg"],
-        ["wg", "genkey", ">", "~/.wg/wg_private.key"],
-        ["wg", "pubkey", "<", "~/.wg/wg_private.key", ">", "~/.wg/wg_public.key"],
+        ["/bin/rm", "-v", "/etc/ssh/ssh_host_*"],
+        ["/usr/sbin/dpkg-reconfigure", "openssh-server"],
+        ["/usr/bin/systemctl", "enable", "fail2ban"],
+        ["/usr/bin/systemctl", "start", "fail2ban"],
+        ["/usr/bin/systemctl", "reload", "ssh"],
+        ["/usr/bin/systemctl", "restart", "ssh"],
+        ["/usr/bin/mkdir", "--mode=700", "~/.wg"],
+        ["/usr/bin/wg", "genkey", ">", "~/.wg/wg_private.key"],
+        ["/usr/bin/wg", "pubkey", "<", "~/.wg/wg_private.key", ">", "~/.wg/wg_public.key"],
+        ["/usr/sbin/ufw", "allow", "ssh"],
+        ["/usr/sbin/ufw", "allow", "2022/tcp"],
+        ["/usr/sbin/ufw", "enable"],
     ],
     final_message=None,
     datasource=Vultr(),
@@ -257,6 +263,7 @@ with open(
         "export_config.yml",
     ),
     mode="w",
+    encoding="utf-8"
 ) as wf:
     wf.write("#cloud-config\n")
     yaml.safe_dump(
